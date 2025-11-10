@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor - Adaptive Learning Control</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='monitor.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        /* Command Center Layout */
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .control-center {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .status-panel {
+            background: linear-gradient(135deg, var(--success) 0%, #22c55e 100%);
+            color: white;
+            padding: 28px 25px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .status-panel h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.3em;
+            color: white;
+            border: none;
+            padding: 0;
+        }
+
+        .status-pulse {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.15em;
+        }
+
+        .pulse-dot {
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .controls-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+        }
+
+        .controls-section h4 {
+            margin: 0 0 18px 0;
+            font-size: 1.05em;
+            color: var(--secondary);
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .quick-action-btn {
+            padding: 14px 20px;
+            border-radius: 10px;
+            border: 2px solid;
+            background: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quick-action-btn.primary {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .quick-action-btn.secondary {
+            border-color: var(--secondary);
+            color: var(--secondary);
+        }
+
+        .quick-action-btn.accent {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .quick-action-btn:hover {
+            transform: translateX(8px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .quick-action-btn.primary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .quick-action-btn.secondary:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .quick-action-btn.accent:hover {
+            background: var(--accent);
+            color: white;
+        }
+
+        .metrics-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            background: var(--bg-secondary);
+            padding: 18px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-item .num {
+            font-size: 2em;
+            font-weight: 900;
+            color: var(--primary);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-item .text {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .tab-bar {
+            background: white;
+            border-radius: 14px;
+            padding: 8px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            gap: 6px;
+        }
+
+        .tab-btn {
+            padding: 14px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-size: 0.9em;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        @media (max-width: 1200px) {
+            .monitor-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .control-center {
+                position: relative;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+        <!-- Page Title -->
+        <h1 style="font-size: 3em; font-weight: 900; color: var(--secondary); margin: 0 0 30px 0; letter-spacing: -0.5px;">
+            ⚡ Adaptive Learning Monitor
+        </h1>
+
+        <!-- Monitor Grid Layout -->
+        <div class="monitor-grid">
+            <!-- Left Control Center -->
+            <div class="control-center">
+                <!-- System Status -->
+                <div class="status-panel">
+                    <h3>🖥️ System Status</h3>
+                    <div class="status-pulse">
+                        <div class="pulse-dot"></div>
+                        <span id="schedulerStatus">Online & Active</span>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 0.9em; opacity: 0.9; font-weight: 600;">
+                        Auto-refresh: Every 10s
+                    </div>
+                </div>
+
+                <!-- Selection Controls -->
+                <div class="controls-section">
+                    <h4>🎯 Select Target</h4>
+                    
+                    <div class="control-group">
+                        <label for="monitorSymbol">Asset</label>
+                        <select id="monitorSymbol">
+                            <option value="AAPL">Apple (AAPL)</option>
+                            <option value="GOOGL">Google (GOOGL)</option>
+                            <option value="MSFT">Microsoft (MSFT)</option>
+                            <option value="TSLA">Tesla (TSLA)</option>
+                            <option value="BTC-USD">Bitcoin (BTC)</option>
+                            <option value="ETH-USD">Ethereum (ETH)</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group" style="margin-top: 15px;">
+                        <label for="monitorModel">Model</label>
+                        <select id="monitorModel">
+                            <option value="lstm">LSTM</option>
+                            <option value="gru">GRU</option>
+                            <option value="arima">ARIMA</option>
+                            <option value="ma">MA</option>
+                            <option value="ensemble">Ensemble</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="controls-section">
+                    <h4>⚡ Quick Actions</h4>
+                    <div class="quick-actions">
+                        <button id="refreshBtn" class="quick-action-btn primary">
+                            <span>🔄</span>
+                            <span>Refresh Data</span>
+                        </button>
+                        <button id="retrainBtn" class="quick-action-btn secondary">
+                            <span>🔧</span>
+                            <span>Trigger Retrain</span>
+                        </button>
+                        <button id="rebalanceBtn" class="quick-action-btn accent">
+                            <span>⚖️</span>
+                            <span>Rebalance</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Key Stats -->
+                <div class="metrics-panel">
+                    <h3 style="margin: 0 0 15px 0; font-size: 1.1em; color: var(--secondary); font-weight: 800; border: none; padding: 0;">📊 Key Metrics</h3>
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <span class="num" id="totalPredictions">0</span>
+                            <span class="text">Predictions</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="num" id="trainingCount" style="color: var(--accent);">0</span>
+                            <span class="text">Trainings</span>
+                        </div>
+                        <div class="stat-item" style="grid-column: span 2;">
+                            <span class="num" id="daysSinceTraining" style="font-size: 1.5em;">N/A</span>
+                            <span class="text">Last Training</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Main Content -->
+            <div>
+                <!-- Performance Overview Bar -->
+                <div class="card" style="margin-bottom: 25px; border-left: 5px solid var(--primary);">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.75em; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">Recent MAPE</div>
+                            <div id="recentMAPE" style="font-size: 2.5em; font-weight: 900; color: var(--primary);">N/A</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.75em; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">Baseline</div>
+                            <div id="baselineMAPE" style="font-size: 2.5em; font-weight: 900; color: var(--accent);">N/A</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.75em; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">All-Time</div>
+                            <div id="alltimeMAPE" style="font-size: 2.5em; font-weight: 900; color: var(--secondary);">N/A</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.75em; color: var(--text-muted); font-weight: 800; text-transform: uppercase; margin-bottom: 10px;">Status</div>
+                            <div id="performanceStatus" style="font-size: 1.6em; font-weight: 900;">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Segmented Tab Control -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="overview">📋 Activity</button>
+                    <button class="tab-btn" data-tab="performance">📊 Trend</button>
+                    <button class="tab-btn" data-tab="versions">🔖 Versions</button>
+                    <button class="tab-btn" data-tab="ensemble">⚖️ Weights</button>
+                    <button class="tab-btn" data-tab="errors">🎯 Errors</button>
+                    <button class="tab-btn" data-tab="logs">📝 Logs</button>
+                </div>
+
+                <!-- Tab Content Panels -->
+                <div id="overview" class="tab-content active">
+                    <div class="card">
+                        <h3>📡 Live Activity Feed</h3>
+                        <div id="activityFeed" style="max-height: 600px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <div id="performance" class="tab-content">
+                    <div class="card">
+                        <h3>📊 Performance Over Time</h3>
+                        <div id="performanceTrendChart" style="min-height: 480px; background: var(--bg-secondary); border-radius: 12px; padding: 20px;"></div>
+                    </div>
+                </div>
+
+                <div id="versions" class="tab-content">
+                    <div class="card">
+                        <h3>🔖 Model Versions</h3>
+                        <div style="font-size: 0.95em; color: var(--text-muted); margin-bottom: 20px; font-weight: 600;">
+                            Active Version: <span id="activeVersion" style="color: var(--primary); font-weight: 800; font-size: 1.3em; margin-left: 8px;">N/A</span>
+                        </div>
+                        <div id="versionHistory" style="max-height: 600px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <div id="ensemble" class="tab-content">
+                    <div style="display: grid; grid-template-columns: 400px 1fr; gap: 20px;">
+                        <div class="card">
+                            <h3>⚖️ Model Weights</h3>
+                            <div id="ensembleWeights"></div>
+                        </div>
+                        <div class="card">
+                            <h3>📈 Weight History</h3>
+                            <div id="weightHistoryChart" style="min-height: 420px; background: var(--bg-secondary); border-radius: 12px; padding: 20px;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="errors" class="tab-content">
+                    <div class="card" style="margin-bottom: 20px;">
+                        <h3>🎯 Prediction vs Actual</h3>
+                        <div id="errorAnalysisChart" style="min-height: 460px; background: var(--bg-secondary); border-radius: 12px; padding: 20px;"></div>
+                    </div>
+                    <div class="card">
+                        <h3>📊 Error Distribution</h3>
+                        <div id="errorDistributionChart" style="min-height: 420px; background: var(--bg-secondary); border-radius: 12px; padding: 20px;"></div>
+                    </div>
+                </div>
+
+                <div id="logs" class="tab-content">
+                    <div class="card">
+                        <h3>📝 Training Event Log</h3>
+                        <div id="trainingLogs" style="max-height: 650px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='monitor.js') }}"></script>
+    <script>
+        // Tab switching functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.dataset.tab;
+                
+                // Update buttons
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById(tabName).classList.add('active');
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: stock_forecasting_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: stock_forecasting
+
+  app:
+    build: .
+    container_name: stock_forecasting_app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/
+      FLASK_ENV: production
+    volumes:
+      - .:/app
+
+volumes:
+  mongodb_data:

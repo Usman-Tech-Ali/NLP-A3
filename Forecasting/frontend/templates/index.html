@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Market Forecaster - Predictive Analytics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        /* Unique Dashboard Layout */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .sidebar-panel {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+
+        .main-content {
+            min-height: 600px;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 20px;
+            border-radius: 14px;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-box h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.8em;
+            opacity: 0.9;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-box .value {
+            font-size: 2.2em;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-light) 100%);
+            color: white;
+            padding: 50px 40px;
+            border-radius: 20px;
+            margin-bottom: 35px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .hero-banner::before {
+            content: '';
+            position: absolute;
+            top: -100px;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(20, 184, 166, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero-banner h1 {
+            font-size: 3.2em;
+            font-weight: 900;
+            margin: 0 0 15px 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-banner p {
+            font-size: 1.25em;
+            opacity: 0.95;
+            margin: 0;
+            position: relative;
+            z-index: 1;
+            font-weight: 500;
+        }
+
+        .pill-badge {
+            display: inline-block;
+            padding: 8px 18px;
+            background: rgba(20, 184, 166, 0.15);
+            color: var(--primary);
+            border-radius: 25px;
+            font-size: 0.85em;
+            font-weight: 700;
+            border: 2px solid var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .action-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: var(--shadow-lg);
+            border: 2px solid var(--border);
+        }
+
+        .metrics-banner {
+            background: linear-gradient(to right, white, var(--bg-secondary));
+            padding: 35px 30px;
+            border-radius: 18px;
+            border: 3px solid var(--primary);
+            box-shadow: var(--shadow-xl);
+            margin: 30px 0;
+        }
+
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+
+        .metric-box {
+            text-align: center;
+        }
+
+        .metric-box .label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .metric-box .value {
+            font-size: 2.8em;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .metric-box .unit {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-top: 5px;
+            display: block;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-panel {
+                position: relative;
+                top: 0;
+            }
+
+            .metrics-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .quick-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics-row {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-banner h1 {
+                font-size: 2.2em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+        <!-- Hero Banner - Completely Different Design -->
+        <div class="hero-banner">
+            <h1>🎯 AI Market Forecaster</h1>
+            <p>Advanced Machine Learning Predictions for Stocks, Crypto & Forex</p>
+            <div style="margin-top: 20px;">
+                <span class="pill-badge">🔴 Live Data</span>
+                <span class="pill-badge" style="margin-left: 10px;">⚡ Real-Time</span>
+            </div>
+        </div>
+
+        <!-- Two-Column Layout: Sidebar + Main -->
+        <div class="dashboard-layout">
+            <!-- Left Sidebar: Controls -->
+            <div class="sidebar-panel">
+                <div class="action-panel">
+                    <h3 style="margin: 0 0 25px 0; font-size: 1.3em; color: var(--secondary); border: none; padding: 0;">⚙️ Configure Forecast</h3>
+
+                    <div class="control-group">
+                        <label for="symbol">🏢 Asset Symbol</label>
+                        <select id="symbol">
+                            <optgroup label="Stocks">
+                                <option value="AAPL">Apple Inc.</option>
+                                <option value="GOOGL">Alphabet Inc.</option>
+                                <option value="MSFT">Microsoft Corp.</option>
+                                <option value="TSLA">Tesla Inc.</option>
+                                <option value="AMZN">Amazon.com</option>
+                                <option value="NVDA">NVIDIA</option>
+                                <option value="META">Meta</option>
+                            </optgroup>
+                            <optgroup label="Crypto">
+                                <option value="BTC-USD">Bitcoin</option>
+                                <option value="ETH-USD">Ethereum</option>
+                                <option value="BNB-USD">Binance Coin</option>
+                                <option value="SOL-USD">Solana</option>
+                            </optgroup>
+                            <optgroup label="Forex">
+                                <option value="EURUSD=X">EUR/USD</option>
+                                <option value="GBPUSD=X">GBP/USD</option>
+                            </optgroup>
+                            <optgroup label="Custom">
+                                <option value="CUSTOM">🔍 Enter Custom</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="control-group" id="customSymbolGroup" style="display: none; margin-top: 15px;">
+                        <label for="customSymbol">Custom Symbol</label>
+                        <input type="text" id="customSymbol" placeholder="e.g., NFLX, AMD" />
+                    </div>
+
+                    <div class="control-group" style="margin-top: 20px;">
+                        <label for="model">🤖 AI Model</label>
+                        <select id="model">
+                            <option value="ensemble">🎯 Ensemble (Best)</option>
+                            <option value="lstm">🧠 LSTM Neural Net</option>
+                            <option value="gru">🔮 GRU Neural Net</option>
+                            <option value="arima">📊 ARIMA Stats</option>
+                            <option value="ma">📈 Moving Average</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group" style="margin-top: 20px;">
+                        <label for="horizon">⏱️ Time Horizon</label>
+                        <select id="horizon">
+                            <option value="1d">Next Day</option>
+                            <option value="3d">Next 3 Days</option>
+                            <option value="7d" selected>Next Week</option>
+                            <option value="24h">24 Hours</option>
+                            <option value="72h">72 Hours</option>
+                        </select>
+                    </div>
+
+                    <button id="forecastBtn" class="btn-primary" style="width: 100%; margin-top: 25px; padding: 16px; font-size: 1em;">
+                        🚀 Run Forecast
+                    </button>
+
+                    <button id="compareBtn" class="btn-secondary" style="width: 100%; margin-top: 12px; padding: 16px; font-size: 1em;">
+                        📊 Compare Models
+                    </button>
+                </div>
+
+                <!-- Quick Stats in Sidebar -->
+                <div class="quick-stats" style="margin-top: 25px;">
+                    <div class="stat-box">
+                        <h4>Accuracy</h4>
+                        <div class="value">98%</div>
+                    </div>
+                    <div class="stat-box" style="background: linear-gradient(135deg, var(--accent), var(--accent-light));">
+                        <h4>Models</h4>
+                        <div class="value">5</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Main Content Area -->
+            <div class="main-content">
+                <!-- Loading State -->
+                <div id="loading" class="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Analyzing Market Data...</p>
+                </div>
+
+                <!-- Metrics Banner - Horizontal Layout -->
+                <div id="metrics" class="metrics-banner" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 1.6em; color: var(--secondary); border: none; padding: 0;">
+                            📊 Prediction Performance
+                        </h3>
+                        <div id="accuracy-rating" style="font-size: 2.5em; font-weight: 900; color: var(--primary);">-</div>
+                    </div>
+
+                    <div class="metrics-row">
+                        <div class="metric-box">
+                            <span class="label">MAPE</span>
+                            <span class="value" id="mape">-</span>
+                            <span class="unit">percent</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="label">RMSE</span>
+                            <span class="value" id="rmse">-</span>
+                            <span class="unit">error</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="label">MAE</span>
+                            <span class="value" id="mae">-</span>
+                            <span class="unit">absolute</span>
+                        </div>
+                        <div class="metric-box">
+                            <span class="label">Model</span>
+                            <span class="value" id="model-name" style="font-size: 1.8em;">-</span>
+                            <span class="unit">algorithm</span>
+                        </div>
+                    </div>
+
+                    <!-- Data Info Row -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; padding-top: 25px; border-top: 2px solid var(--border);">
+                        <div style="padding: 15px; background: rgba(20, 184, 166, 0.08); border-radius: 10px; border-left: 4px solid var(--primary);">
+                            <strong style="display: block; color: var(--primary); margin-bottom: 5px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">📡 Data Timestamp</strong>
+                            <span id="data-time" style="color: var(--text-secondary); font-weight: 600; font-size: 0.95em;">-</span>
+                        </div>
+                        <div style="padding: 15px; background: rgba(251, 146, 60, 0.08); border-radius: 10px; border-left: 4px solid var(--accent);">
+                            <strong style="display: block; color: var(--accent); margin-bottom: 5px; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px;">🔮 Forecast Generated</strong>
+                            <span id="prediction-time" style="color: var(--text-secondary); font-weight: 600; font-size: 0.95em;">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Area - Full Width in Main Content -->
+                <div id="chart" class="chart-container"></div>
+
+                <!-- Model Comparison - Different Table Design -->
+                <div id="comparison" class="card" style="display: none;">
+                    <h3>📊 Algorithm Benchmark Results</h3>
+                    <table id="comparisonTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Algorithm</th>
+                                <th style="text-align: center;">RMSE</th>
+                                <th style="text-align: center;">MAE</th>
+                                <th style="text-align: center;">MAPE (%)</th>
+                                <th style="text-align: center;">Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+
+</html>

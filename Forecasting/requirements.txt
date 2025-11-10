@@ -1,0 +1,28 @@
+# Core dependencies
+flask==3.0.0
+flask-cors==4.0.0
+pymongo==4.6.1
+yfinance>=0.2.43
+
+# Data processing
+pandas==2.1.4
+numpy==1.26.2
+
+# Traditional ML models
+statsmodels==0.14.1
+scikit-learn==1.3.2
+
+# Neural models
+torch==2.1.2
+transformers==4.36.2
+
+# Visualization
+plotly==5.18.0
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+
+# Utilities
+python-dotenv==1.0.0
+schedule==1.2.0

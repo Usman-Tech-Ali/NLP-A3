@@ -1,0 +1,108 @@
+<!-- Horizontal Top Bar Navigation - Clean Professional -->
+<nav>
+    <div style="max-width: 1400px; margin: 0 auto; padding: 0 30px; display: flex; justify-content: space-between; align-items: center;">
+        <!-- Brand Identity -->
+        <a href="/" style="text-decoration: none; display: flex; align-items: center; gap: 15px; padding: 18px 0;">
+            <div style="width: 50px; height: 50px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md);">
+                <span style="font-size: 1.8em;">📈</span>
+            </div>
+            <div>
+                <div style="font-size: 1.5em; font-weight: 900; color: var(--secondary); line-height: 1; letter-spacing: -0.5px;">
+                    Market<span style="color: var(--primary);">AI</span>
+                </div>
+                <div style="font-size: 0.7em; color: var(--text-muted); font-weight: 600; margin-top: 3px; letter-spacing: 2px; text-transform: uppercase;">
+                    Analytics Suite
+                </div>
+            </div>
+        </a>
+
+        <!-- Navigation Links -->
+        <ul style="display: flex; gap: 5px; list-style: none; margin: 0; padding: 0;">
+            <li>
+                <a href="/" id="nav-forecast" class="nav-link">
+                    <span class="nav-icon">📈</span>
+                    <span>Forecasts</span>
+                </a>
+            </li>
+            <li>
+                <a href="/portfolio" id="nav-portfolio" class="nav-link">
+                    <span class="nav-icon">💼</span>
+                    <span>Portfolios</span>
+                </a>
+            </li>
+            <li>
+                <a href="/evaluation" id="nav-evaluation" class="nav-link">
+                    <span class="nav-icon">🔬</span>
+                    <span>Evaluation</span>
+                </a>
+            </li>
+            <li>
+                <a href="/monitor" id="nav-monitor" class="nav-link">
+                    <span class="nav-icon">⚡</span>
+                    <span>Monitor</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<style>
+    .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 20px 24px;
+        color: var(--text-secondary);
+        text-decoration: none;
+        border-bottom: 3px solid transparent;
+        transition: all 0.25s ease;
+        font-weight: 600;
+        font-size: 0.9em;
+        position: relative;
+    }
+
+    .nav-link .nav-icon {
+        font-size: 1.3em;
+        transition: transform 0.3s ease;
+    }
+
+    .nav-link:hover {
+        color: var(--primary);
+        background: rgba(20, 184, 166, 0.06);
+    }
+
+    .nav-link:hover .nav-icon {
+        transform: scale(1.15);
+    }
+
+    .nav-link.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+        background: rgba(20, 184, 166, 0.1);
+        font-weight: 700;
+    }
+
+    .nav-link.active .nav-icon {
+        transform: scale(1.1);
+    }
+</style>
+
+<script>
+    // Active page highlighting
+    (function () {
+        const path = window.location.pathname;
+        const navMap = {
+            '/': 'nav-forecast',
+            '/portfolio': 'nav-portfolio',
+            '/evaluation': 'nav-evaluation',
+            '/monitor': 'nav-monitor'
+        };
+
+        const activeId = navMap[path] || 'nav-forecast';
+        const link = document.getElementById(activeId);
+        
+        if (link) {
+            link.classList.add('active');
+        }
+    })();
+</script>

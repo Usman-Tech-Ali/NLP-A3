@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Evaluation - Performance Lab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        /* Kanban-Style Board Layout */
+        .evaluation-board {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding: 20px 0;
+            min-height: 400px;
+        }
+
+        .performance-column {
+            min-width: 340px;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 22px;
+            flex-shrink: 0;
+        }
+
+        .column-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-weight: 800;
+            font-size: 1.1em;
+            text-align: center;
+            box-shadow: var(--shadow-md);
+        }
+
+        .column-header .count {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            margin-left: 8px;
+        }
+
+        .model-chip {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 14px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .model-chip:hover {
+            transform: scale(1.05);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary);
+        }
+
+        .model-chip.selected {
+            border: 3px solid var(--accent);
+            background: linear-gradient(to bottom, white, rgba(251, 146, 60, 0.08));
+        }
+
+        .chip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chip-name {
+            font-size: 1.2em;
+            font-weight: 900;
+            color: var(--secondary);
+        }
+
+        .chip-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3em;
+            background: var(--bg-secondary);
+        }
+
+        .chip-metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.9em;
+        }
+
+        .chip-metric .key {
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .chip-metric .val {
+            color: var(--primary);
+            font-weight: 900;
+        }
+
+        .filter-toolbar {
+            background: white;
+            border-radius: 16px;
+            padding: 20px 28px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow-md);
+            border: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .filter-group-inline {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .filter-group-inline label {
+            font-size: 0.85em;
+            font-weight: 800;
+            color: var(--secondary);
+            text-transform: uppercase;
+        }
+
+        .filter-group-inline select {
+            padding: 10px 18px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-secondary);
+            color: var(--secondary);
+            font-weight: 700;
+            min-width: 180px;
+        }
+
+        .detail-panel {
+            background: white;
+            border-radius: 18px;
+            padding: 35px;
+            margin: 25px 0;
+            box-shadow: var(--shadow-lg);
+            border-left: 8px solid var(--primary);
+        }
+
+        .detail-panel h3 {
+            color: var(--secondary);
+            margin: 0 0 28px 0;
+            font-weight: 900;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stats-showcase {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .showcase-card {
+            background: linear-gradient(to bottom right, var(--bg-secondary), white);
+            padding: 25px;
+            border-radius: 14px;
+            text-align: center;
+            border: 2px solid var(--border);
+        }
+
+        .showcase-card .number {
+            font-size: 3em;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        .showcase-card .title {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .chart-panel {
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 25px;
+            min-height: 400px;
+        }
+
+        .timeline-container {
+            max-height: 550px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .timeline-entry {
+            position: relative;
+            padding: 22px 25px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin-bottom: 18px;
+            border-left: 6px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-entry:hover {
+            background: white;
+            box-shadow: var(--shadow-md);
+            transform: translateX(10px);
+            border-left-width: 8px;
+        }
+
+        .timeline-entry.active {
+            background: rgba(34, 197, 94, 0.1);
+            border-left-color: var(--success);
+            border-left-width: 8px;
+        }
+
+        .timeline-entry.active::before {
+            content: '🟢';
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5em;
+        }
+
+        .split-view {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 22px;
+        }
+
+        @media (max-width: 1200px) {
+            .evaluation-board {
+                flex-direction: column;
+            }
+
+            .performance-column {
+                min-width: 100%;
+            }
+
+            .split-view {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="container">
+        <!-- Page Header -->
+        <h1 style="font-size: 3.2em; font-weight: 900; color: var(--secondary); margin: 0 0 10px 0; letter-spacing: -1px;">
+            🔬 Evaluation Laboratory
+        </h1>
+        <p style="font-size: 1.2em; color: var(--text-secondary); margin: 0 0 35px 0; font-weight: 500;">
+            Analyze, compare, and benchmark predictive model performance
+        </p>
+
+        <!-- Filter Toolbar -->
+        <div class="filter-toolbar">
+            <div style="display: flex; gap: 25px; flex-wrap: wrap;">
+                <div class="filter-group-inline">
+                    <label>📊 Asset:</label>
+                    <select id="filterSymbol">
+                        <option value="all">All Assets</option>
+                    </select>
+                </div>
+
+                <div class="filter-group-inline">
+                    <label>🤖 Algorithm:</label>
+                    <select id="filterModel">
+                        <option value="all">All Models</option>
+                        <option value="lstm">LSTM Neural</option>
+                        <option value="gru">GRU Neural</option>
+                        <option value="arima">ARIMA Statistical</option>
+                        <option value="ma">Moving Average</option>
+                        <option value="ensemble">Ensemble</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="refreshModels" class="btn-accent" style="padding: 12px 28px;">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <!-- Kanban Board: Models by Performance Category -->
+        <div class="evaluation-board" id="modelList">
+            <!-- Excellent Performance Column -->
+            <div class="performance-column" style="background: rgba(34, 197, 94, 0.08);">
+                <div class="column-header" style="background: linear-gradient(135deg, var(--success), #22c55e);">
+                    ⭐ Excellent <span class="count">0</span>
+                </div>
+                <div id="excellentModels">
+                    <p style="text-align: center; color: var(--text-muted); padding: 40px 20px;">No models yet</p>
+                </div>
+            </div>
+
+            <!-- Good Performance Column -->
+            <div class="performance-column" style="background: rgba(20, 184, 166, 0.08);">
+                <div class="column-header">
+                    ✓ Good <span class="count">0</span>
+                </div>
+                <div id="goodModels">
+                    <p style="text-align: center; color: var(--text-muted); padding: 40px 20px;">No models yet</p>
+                </div>
+            </div>
+
+            <!-- Fair Performance Column -->
+            <div class="performance-column" style="background: rgba(251, 191, 36, 0.08);">
+                <div class="column-header" style="background: linear-gradient(135deg, var(--warning), #fbbf24);">
+                    ⚠ Fair <span class="count">0</span>
+                </div>
+                <div id="fairModels">
+                    <p style="text-align: center; color: var(--text-muted); padding: 40px 20px;">No models yet</p>
+                </div>
+            </div>
+
+            <!-- Poor Performance Column -->
+            <div class="performance-column" style="background: rgba(239, 68, 68, 0.08);">
+                <div class="column-header" style="background: linear-gradient(135deg, var(--error), #ef4444);">
+                    ✗ Needs Work <span class="count">0</span>
+                </div>
+                <div id="poorModels">
+                    <p style="text-align: center; color: var(--text-muted); padding: 40px 20px;">No models yet</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Details Section (Appears when model selected) -->
+        <div id="modelDetails" style="display: none;">
+            <!-- Performance Overview -->
+            <div class="detail-panel">
+                <h3>📊 Performance Dashboard</h3>
+                <div class="stats-showcase" id="performanceOverview"></div>
+            </div>
+
+            <!-- Split View: Chart + Timeline -->
+            <div class="split-view">
+                <!-- Performance Trend Chart -->
+                <div class="detail-panel">
+                    <h3>📈 Accuracy Trend</h3>
+                    <div class="chart-panel">
+                        <div id="performanceTrendChart" style="min-height: 380px;"></div>
+                    </div>
+                </div>
+
+                <!-- Version Timeline -->
+                <div class="detail-panel">
+                    <h3>🕐 Version Timeline</h3>
+                    <div class="timeline-container">
+                        <div id="versionHistory"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version Comparison -->
+            <div class="detail-panel">
+                <h3>📊 Version Benchmark</h3>
+                <div class="chart-panel">
+                    <div id="versionComparisonChart" style="min-height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='evaluation.js') }}"></script>
+</body>
+
+</html>
